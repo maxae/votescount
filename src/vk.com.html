@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title></title>
+    <script src="./token.js"  type="text/javascript"></script>
+    <script src="jquery-1.11.0.min.js" type="text/javascript"></script>
+    <style>
+        .members
+        {
+            color: green;
+            font-size: 10px;
+        }
+        .others
+        {
+            color: orangered;
+            font-size: 10px;
+        }
+    </style>
+</head>
+<body>
+Photo_id: <input id="photo" type="text" /> <input id="calc" type="button" value="Calculate" onclick="calculate()" />
+<div id="res">
+</div>
+<script>
+    var group_id = 37510911;
+    var members;
+
+    var calculated = {
+    };
+
+    function showButton(show) {
+        var display = show ? "" : "none";
+        $("#calc").css("display", display);
+    }
+
+    function objToInnerHtml(obj) {
+        var res = "";
+        for(var i in obj) {
+            if(res != "")
+                res += ", ";
+            res += '<a href="https://vk.com/id' + i + '">' + i + '</a>';
+        }
+        return res;
+    }
+
+    function countOfAttributes(obj) {
+        var res = 0;
+        for(var i in obj)
+            ++res;
+        return res;
+    }
+
+    function genInnerHtml(photoId, members, others) {
+        var header = "<b>Photo id: " + photoId
+                + " members: " + countOfAttributes(members)
+                + " others:" + countOfAttributes(others) + "</b>";
+        var mems = "<div class='members' title='Members'>Members: " + objToInnerHtml(members) + "</div>";
+        var oth = "<div class='others' others='Others'>Others: " + objToInnerHtml(others) + "</div>";
+        return header + mems + oth;
+    }
+
+    function calculate() {
+        var photo_id = +$("#photo")[0].value
+        if (calculated[photo_id] != null)
+            return;
+
+        PhotoComments.collect(-group_id, photo_id, function(data) {
+            console.log(data);
+            var calcRes = calculated[photo_id] = { data: data, members: {}, other: {} };
+            var comments = data.getComments();
+            comments.forEach(function(c){
+                if (members.isMember(c.from_id)) {
+                    calcRes.members[c.from_id] = 1;
+                } else {
+                    calcRes.other[c.from_id] = 1;
+                }
+            });
+            var parent = document.getElementById("res");
+            var cont = document.createElement("div");
+            parent.appendChild(cont);
+            cont.setAttribute("id", photo_id);
+            cont.innerHTML = genInnerHtml(photo_id, calcRes.members, calcRes.other);
+        });
+    }
+
+    (function() {
+        showButton(false);
+        Members.collect(group_id, function(mems) {
+            console.log(members);
+            members = mems;
+            showButton(true);
+            Token.getToken();
+        })
+    })();
+
+</script>
+</body>
+</html>
